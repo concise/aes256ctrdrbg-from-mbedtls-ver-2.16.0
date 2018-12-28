@@ -1,0 +1,9 @@
+#ifndef CUSTOMIZED_MBEDTLS_CONFIG_H
+#define CUSTOMIZED_MBEDTLS_CONFIG_H
+
+#define MBEDTLS_AES_C
+#define MBEDTLS_CTR_DRBG_C
+
+#include "check_config.h"
+
+#endif /* CUSTOMIZED_MBEDTLS_CONFIG_H */
