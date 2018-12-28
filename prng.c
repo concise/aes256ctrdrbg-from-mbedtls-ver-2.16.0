@@ -6,12 +6,12 @@
 
 static int _dummy_f_entropy(void *p_entropy, unsigned char *out, size_t outlen) {
 
-    // The 2nd argument of mbedtls_ctr_drbg_seed() is of type
+    // The 2nd argument of mbedtls_ctr_drbg_seed() is of type:
     //
     //      int (*)(void *, unsigned char *, size_t)
     //
-    // This is just a dummy implementation because for our deterministic use case
-    // we never perform reseeding.
+    // This is just a dummy implementation because for our deterministic use
+    // case we never access external randomness source.
     (void) p_entropy;
     (void) out;
 
@@ -42,20 +42,24 @@ int prng_generate(struct prng_context *ctx, uint8_t *out, uint32_t outlen) {
         ctx
         && ctx->totlen <= PRNG_MAX_NUM_BYTES_GEN
         && ctx->remlen <= PRNG_INTERNAL_BUF_SIZE
-        && out
+        && (outlen == 0 || out)
         && outlen < PRNG_MAX_NUM_BYTES_GEN
         && outlen + ctx->totlen < PRNG_MAX_NUM_BYTES_GEN
     )) return -1;
 
     while (outlen) {
+        // ask CTR DRBG for more bytes, if no remaining bytes in the internal buffer
         if (ctx->remlen == 0) {
             int err = mbedtls_ctr_drbg_random(&ctx->ctr_drbg_ctx, ctx->buf, PRNG_INTERNAL_BUF_SIZE);
             if (err) return -2;
             ctx->remlen = PRNG_INTERNAL_BUF_SIZE;
         }
+
+        // read nb random bytes from internal buffer
         uint32_t nb = outlen > ctx->remlen ? ctx->remlen : outlen;
         memcpy(out, &ctx->buf[PRNG_INTERNAL_BUF_SIZE - ctx->remlen], nb);
-        memset(&ctx->buf[PRNG_INTERNAL_BUF_SIZE - ctx->remlen], 0, nb);
+
+        // update pointers and counters to reflect that we just read nb bytes
         out += nb;
         outlen -= nb;
         ctx->remlen -= nb;
