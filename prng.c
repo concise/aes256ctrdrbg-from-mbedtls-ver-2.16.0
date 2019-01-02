@@ -62,6 +62,7 @@ int prng_generate(struct prng_context *ctx, uint8_t *out, uint32_t outlen) {
         // update pointers and counters to reflect that we just read nb bytes
         out += nb;
         outlen -= nb;
+        ctx->totlen += nb;
         ctx->remlen -= nb;
     }
 
